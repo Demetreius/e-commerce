@@ -1,4 +1,7 @@
-import { BadRequestException, Body, Controller, Get, NotFoundException, Param, Post, Query } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, NotFoundException, Param, Post, Put, Query } from '@nestjs/common';
+import { CreateUserDto } from './dto/create-user.dto.js';
+import { UpdateUserDto } from './dto/update-user.dto.js';
+import { match } from 'node:assert/strict';
 
 
 const users = [
@@ -36,8 +39,8 @@ export class UserController {
 
 
     @Post()
-    createUser(@Body() body: { name: string }) {
-        const { name } = body;
+    createUser(@Body() createUserDto: CreateUserDto) {
+        const { name } = createUserDto;
         if(name.trim()){
             const newUser = {
                 id: `user-${users.length + 1}`,
@@ -51,5 +54,27 @@ export class UserController {
             }
         }
         throw new BadRequestException();
+    }
+
+
+    @Put(":id")
+    updateUser(@Param("id") id: string, @Body() updateUserDto: UpdateUserDto) {
+        
+        const matchingUserIdx = users.findIndex(user => user.id === id);
+
+        if(matchingUserIdx === -1) {
+            throw new NotFoundException();
+        }
+        
+        users[matchingUserIdx] = {
+            ...users[matchingUserIdx],
+            ...updateUserDto,
+            id,
+        }
+        return {
+            message: "User successfuly updated",
+            user: users[matchingUserIdx]
+        }
+        
     }
 }
