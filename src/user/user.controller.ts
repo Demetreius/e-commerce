@@ -1,80 +1,43 @@
-import { BadRequestException, Body, Controller, Get, NotFoundException, Param, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Get, NotFoundException, Param, Post, Put, Query } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
-import { match } from 'node:assert/strict';
+import { UserService } from './user.service.js';
 
-
-const users = [
-    { id: "user-1", name: "John Doe" },
-    { id: "user-2", name: "Jane Dobby" },
-    { id: "user-3", name: "Demetreius" }
-];
 
 @Controller('user')
 export class UserController {
 
+    constructor(private readonly userService: UserService) {
+
+    }
+
     // GET "/user"
     @Get()
-    getUser(@Query("name") name: string) {
-
-
-
-        if (name) {
-            const filtered = users.filter((user) => user.name.toLowerCase().includes(name.toLowerCase()))
-            return filtered;
-        }
-
-        return users;
+    getUsers(@Query("name") name: string): unknown {
+        return this.userService.findAllUsers(name ?? "");
     }
 
 
     @Get(':id')
-    getUserByid(@Param("id") id: string) {
-        if(id?.trim()){
-            const user = users.find((user) => user.id === id)
-            return user
+    getUserByid(@Param("id") id: string): unknown {
+        const user = this.userService.getOne(id)
+        
+        if(!user) {
+            throw new NotFoundException("User not found");
         }
-        throw new NotFoundException()
+        
+        return user;
     }
 
 
     @Post()
-    createUser(@Body() createUserDto: CreateUserDto) {
-        const { name } = createUserDto;
-        if(name.trim()){
-            const newUser = {
-                id: `user-${users.length + 1}`,
-                name
-            }
-            users.push(newUser);
-
-            return {
-                message: "user sucessfully created",
-                newUser
-            }
-        }
-        throw new BadRequestException();
+    createUser(@Body() createUserDto: CreateUserDto): unknown {
+        return this.userService.createUser(createUserDto)
     }
 
 
     @Put(":id")
-    updateUser(@Param("id") id: string, @Body() updateUserDto: UpdateUserDto) {
-        
-        const matchingUserIdx = users.findIndex(user => user.id === id);
-
-        if(matchingUserIdx === -1) {
-            throw new NotFoundException();
-        }
-        
-        users[matchingUserIdx] = {
-            ...users[matchingUserIdx],
-            ...updateUserDto,
-            id,
-        }
-        return {
-            message: "User successfuly updated",
-            user: users[matchingUserIdx]
-        }
-        
+    updateUser(@Param("id") id: string, @Body() updateUserDto: UpdateUserDto): unknown {
+        return this.userService.updateUser(id, updateUserDto)
     }
 }
