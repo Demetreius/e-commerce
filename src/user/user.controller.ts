@@ -1,10 +1,12 @@
-import { Body, Controller, Get, NotFoundException, Param, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, NotFoundException, Param, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
 import { UserService } from './user.service.js';
+import { RoleGuard } from '../guards/role.guard.js';
 
 
 @Controller('user')
+@UseGuards(RoleGuard)
 export class UserController {
 
     constructor(private readonly userService: UserService) {
@@ -21,11 +23,11 @@ export class UserController {
     @Get(':id')
     getUserByid(@Param("id") id: string): unknown {
         const user = this.userService.getOne(id)
-        
-        if(!user) {
+
+        if (!user) {
             throw new NotFoundException("User not found");
         }
-        
+
         return user;
     }
 
@@ -39,5 +41,10 @@ export class UserController {
     @Put(":id")
     updateUser(@Param("id") id: string, @Body() updateUserDto: UpdateUserDto): unknown {
         return this.userService.updateUser(id, updateUserDto)
+    }
+
+    @Delete(":id")
+    deleteUser(@Param("id") id: string): unknown {
+        return this.userService.deleteUser(id)
     }
 }
